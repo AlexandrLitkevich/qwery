@@ -1,0 +1,6 @@
+env: "local" #local dev prod
+storage_path: "./stroradge/storadge.db" #path database
+http_server:
+  address: "localhost:8082"
+  timeout: 4s #время на чтение запроса
+  idle_timejout: 60s #время жизни соендинения(переиспользуем соендинение с одним клиентом)

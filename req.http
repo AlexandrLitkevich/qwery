@@ -1,0 +1,20 @@
+#POST http://localhost:8082/url
+
+### Send POST request with json body
+POST http://localhost:8082/user
+Content-Type: application/json
+
+{
+  "Name": "Alex",
+  "Age": 44,
+  "Position": "developer"
+}
+
+### Send POST request with json body failed
+#POST http://localhost:8082/url
+#Content-Type: application/json
+#
+#{
+#  "url": "https//:www.google.com",
+#  "alias": "gl3"
+#}

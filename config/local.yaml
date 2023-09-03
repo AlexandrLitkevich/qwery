@@ -1,5 +1,5 @@
 env: "local" #local dev prod
-storage_path: "./stroradge/storadge.db" #path database
+storage_path: "../../storage/storage.db" #path database
 http_server:
   address: "localhost:8082"
   timeout: 4s #время на чтение запроса

@@ -1,9 +1,13 @@
 package create_user
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/user/create_user/mocks"
 	"github.com/AlexandrLitkevich/qwery/internal/lib/logger/handlers/slogdiscard"
 	"github.com/stretchr/testify/mock"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -23,15 +27,16 @@ func TestCreateUserHandler(t *testing.T) {
 			name:       "first case",
 			wantStatus: true,
 			userInfo: userInfo{
-				age:      11,
-				name:     "Pops",
-				position: "PM",
+				age:      30,
+				name:     "Pops-test",
+				position: "Team lead",
 			},
 		},
 	}
 	for _, tt := range tests {
-		//tt := tt
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			mockMethod := mocks.NewCreateUserProvider(t)
 			mockLogger := slogdiscard.NewDiscardLogger()
 
@@ -39,8 +44,24 @@ func TestCreateUserHandler(t *testing.T) {
 				//Настраиваем в соответсвии с кейсами
 				mockMethod.On("CreateUser", tt.userInfo, mock.AnythingOfType("bool")).Return(true, tt.wantError).Once()
 			}
-			got := New(mockLogger, mockMethod)
-			t.Log(got)
+			handler := New(mockLogger, mockMethod)
+
+			//body request
+			input := fmt.Sprintf(`{"age": "%v", "name": "%s", "position": "%s",}`, tt.userInfo.age, tt.userInfo.name, tt.userInfo.position)
+
+			req, _ := http.NewRequest(http.MethodPost, "/user", bytes.NewReader([]byte(input)))
+			//require.NoError(t, err)
+
+			rr := httptest.NewRecorder()
+			handler.ServeHTTP(rr, req)
+
+			//require.Equal(t, rr.Code, http.StatusOK)
+
+			//body := rr.Body.String()
+			//
+			//var resp user.Response
+			//
+			//require.NoError(t, json.Unmarshal([]byte(body), &resp))
 		})
 	}
 }

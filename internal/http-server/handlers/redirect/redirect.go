@@ -4,7 +4,7 @@ import (
 	"errors"
 	resp "github.com/AlexandrLitkevich/qwery/internal/lib/api/response"
 	"github.com/AlexandrLitkevich/qwery/internal/lib/logger/sl"
-	"github.com/AlexandrLitkevich/qwery/internal/storage.go"
+	"github.com/AlexandrLitkevich/qwery/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"

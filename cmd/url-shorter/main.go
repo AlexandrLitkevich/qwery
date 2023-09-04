@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/url/save"
-	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/user"
+	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/user/create_user"
 	"github.com/AlexandrLitkevich/qwery/internal/lib/logger/handlers/slogpretty"
 	"net/http"
 	"time"
@@ -18,7 +18,7 @@ import (
 	"github.com/AlexandrLitkevich/qwery/internal/config"
 	mwLogger "github.com/AlexandrLitkevich/qwery/internal/http-server/middleware/logger"
 	"github.com/AlexandrLitkevich/qwery/internal/lib/logger/sl"
-	"github.com/AlexandrLitkevich/qwery/internal/storage.go/sqlite"
+	"github.com/AlexandrLitkevich/qwery/internal/storage/sqlite"
 	"github.com/joho/godotenv"
 )
 
@@ -60,7 +60,7 @@ func main() {
 	router.Use(middleware.URLFormat)
 
 	router.Post("/url", save.New(log, storage))
-	router.Post("/user", user.Create(log, storage)) // Тут прям магия))))
+	router.Post("/user", create_user.New(log, storage)) // Тут прям магия))))
 	//TODO Get request home page
 
 	log.Info("started server", slog.String("address", cfg.Address))

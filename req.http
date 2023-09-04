@@ -5,9 +5,9 @@ POST http://localhost:8082/user
 Content-Type: application/json
 
 {
-  "Name": "Alex",
+  "Name": "eeeee",
   "Age": 44,
-  "Position": "developer"
+  "Position": "Develop"
 }
 
 ### Send POST request with json body failed

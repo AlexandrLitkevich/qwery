@@ -5,12 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/user"
-	"github.com/AlexandrLitkevich/qwery/internal/storage.go"
+	"github.com/AlexandrLitkevich/qwery/internal/storage"
 	"github.com/google/uuid"
 	"github.com/mattn/go-sqlite3"
 )
 
-//TODO: Edit ETCD
+//TODO: Added ETCD
+//TODO: Разделит по папкам сущности(user,task ...etc)
 
 type Storage struct {
 	db *sql.DB
@@ -106,40 +107,34 @@ func (s *Storage) GetURL(alias string) (string, error) {
 
 //TODO: DeleteUrl
 
-func (s *Storage) CreateUser(userInfo user.Request) (*user.User, error) {
-	const op = "storage.sqlite.CreateUser"
+func (s *Storage) CreateUser(userInfo user.Request) (bool, error) {
+	const op = "storage.sqlite.CreateUserProvider"
 
 	//Generate ID
 	//TODO change type int on string
 	userId, err := uuid.NewUUID()
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		return false, fmt.Errorf("%s: %w", op, err)
 	}
 	us := userId.String()
-	fmt.Println("this US ===", us)
-	// TODO: asyn
+	// TODO: async
 
 	stmt, err := s.db.Prepare("INSERT INTO user(id, name, age, position) VALUES(?, ?, ?, ?)")
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		return false, fmt.Errorf("%s: %w", op, err)
 	}
 
 	_, err = stmt.Exec(us, userInfo.Name, userInfo.Age, userInfo.Position)
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
-			return nil, fmt.Errorf("%s: %w", op, storage.ErrUserExists)
+			return false, fmt.Errorf("%s: %w", op, storage.ErrUserExists)
 		}
 
-		return nil, fmt.Errorf("%s: %w", op, err)
+		return false, fmt.Errorf("%s: %w", op, err)
 	}
 
-	createdUser, err := s.GetUser(us)
-	if err != nil {
-		return nil, fmt.Errorf("%s: failed to get last createdUser id: %w", op, err)
-	}
-
-	return createdUser, nil
+	return true, nil
 }
 
 func (s *Storage) GetUser(userId string) (*user.User, error) {

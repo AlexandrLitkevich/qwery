@@ -58,7 +58,7 @@ func TestSaveHandler(t *testing.T) {
 		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+			t.Parallel() //gorutine
 
 			urlSaverMock := mocks.NewURLSaver(t)
 

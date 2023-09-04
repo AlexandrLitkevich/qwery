@@ -1,7 +1,8 @@
-package user
+package create_user
 
 import (
 	"errors"
+	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/user"
 	resp "github.com/AlexandrLitkevich/qwery/internal/lib/api/response"
 	"github.com/AlexandrLitkevich/qwery/internal/lib/logger/sl"
 	"github.com/go-chi/chi/v5/middleware"
@@ -12,7 +13,19 @@ import (
 	"net/http"
 )
 
-func Create(log *slog.Logger, UserCRUD Crud) http.HandlerFunc {
+type Response struct {
+	resp.Response
+	status bool
+}
+
+//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=CreateUserProvider
+type CreateUserProvider interface {
+	CreateUser(user user.Request) (bool, error)
+}
+
+// New TODO: setting validator
+// New TODO: Added code 504 etc
+func New(log *slog.Logger, method CreateUserProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.createdUser.save.Create" //operation for message error
 
@@ -23,7 +36,7 @@ func Create(log *slog.Logger, UserCRUD Crud) http.HandlerFunc {
 
 		log.Debug("Start create request")
 
-		var req Request
+		var req user.Request
 		// парсим json в структуру из Body in Request
 		err := render.DecodeJSON(r.Body, &req)
 		if errors.Is(err, io.EOF) {
@@ -44,14 +57,13 @@ func Create(log *slog.Logger, UserCRUD Crud) http.HandlerFunc {
 
 		if err := validator.New().Struct(req); err != nil {
 			var validateErr validator.ValidationErrors
-			errors.As(err, &validateErr) //TODO what error.As ???
+			errors.As(err, &validateErr)
 			log.Error("invalid request", sl.Err(err))
 			render.JSON(w, r, resp.ValidationError(validateErr))
 			return
 		}
-		log.Info("This req", req)
 
-		createdUser, err := UserCRUD.CreateUser(req)
+		statusCreatedUser, err := method.CreateUser(req)
 
 		if err != nil {
 			log.Error("failed to add user", sl.Err(err))
@@ -63,18 +75,15 @@ func Create(log *slog.Logger, UserCRUD Crud) http.HandlerFunc {
 			render.JSON(w, r, resp.Error("failed to add user"))
 			return
 		}
+		log.Info("user created")
 
-		log.Info("createdUser added", slog.String("createdUser id", createdUser.ID))
-		responseOK(w, r, *createdUser)
+		responseOK(w, r, statusCreatedUser)
 	}
 }
 
-func responseOK(w http.ResponseWriter, r *http.Request, user User) {
+func responseOK(w http.ResponseWriter, r *http.Request, status bool) {
 	render.JSON(w, r, Response{
 		Response: resp.OK(),
-		ID:       user.ID,
-		Name:     user.Name,
-		Age:      user.Age,
-		Position: user.Position,
+		status:   status,
 	})
 }

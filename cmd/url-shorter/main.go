@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/image"
 	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/url/save"
 	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/user/create_user"
 	"github.com/AlexandrLitkevich/qwery/internal/lib/logger/handlers/slogpretty"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/AlexandrLitkevich/qwery/internal/config"
 	mwLogger "github.com/AlexandrLitkevich/qwery/internal/http-server/middleware/logger"
+	mwRSize "github.com/AlexandrLitkevich/qwery/internal/http-server/middleware/request"
 	"github.com/AlexandrLitkevich/qwery/internal/lib/logger/sl"
 	"github.com/AlexandrLitkevich/qwery/internal/storage/sqlite"
 	"github.com/joho/godotenv"
@@ -58,9 +60,12 @@ func main() {
 
 	router.Use(middleware.Recoverer) // Поднимаем приложение при панике
 	router.Use(middleware.URLFormat)
+	router.Use(mwRSize.RequestSize(1))
 
 	router.Post("/url", save.New(log, storage))
 	router.Post("/user", create_user.New(log, storage)) // Тут прям магия))))
+	router.Post("/image", image.New(log, storage))
+
 	//TODO Get request home page
 
 	log.Info("started server", slog.String("address", cfg.Address))

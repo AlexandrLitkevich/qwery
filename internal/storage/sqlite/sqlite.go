@@ -162,3 +162,7 @@ func (s *Storage) GetUser(userId string) (*user.User, error) {
 
 	return &user.User{ID: ID, Name: Name, Age: Age, Position: Position}, nil
 }
+
+func (s *Storage) LoadImage() (bool, error) {
+	return true, nil
+}

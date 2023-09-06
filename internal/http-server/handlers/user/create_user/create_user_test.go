@@ -2,34 +2,33 @@ package create_user
 
 import (
 	"bytes"
-	"fmt"
+	"encoding/json"
+	"errors"
+	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/user"
 	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/user/create_user/mocks"
 	"github.com/AlexandrLitkevich/qwery/internal/lib/logger/handlers/slogdiscard"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
 func TestCreateUserHandler(t *testing.T) {
-	type userInfo struct {
-		name     string
-		age      int
-		position string
-	}
+
 	tests := []struct {
 		name       string
 		wantStatus bool
 		wantError  string
-		userInfo
+		userInfo   user.Request
 	}{
 		{
 			name:       "first case",
 			wantStatus: true,
-			userInfo: userInfo{
-				age:      30,
-				name:     "Pops-test",
-				position: "Team lead",
+			userInfo: user.Request{
+				Age:      30,
+				Name:     "Pops-test",
+				Position: "Team lead",
 			},
 		},
 	}
@@ -42,26 +41,27 @@ func TestCreateUserHandler(t *testing.T) {
 
 			if tt.wantStatus == true {
 				//Настраиваем в соответсвии с кейсами
-				mockMethod.On("CreateUser", tt.userInfo, mock.AnythingOfType("bool")).Return(true, tt.wantError).Once()
+				mockMethod.On("CreateUser", tt.userInfo, mock.AnythingOfType("string")).Return(true, errors.New(tt.wantError)).Once()
 			}
 			handler := New(mockLogger, mockMethod)
 
 			//body request
-			input := fmt.Sprintf(`{"age": "%v", "name": "%s", "position": "%s",}`, tt.userInfo.age, tt.userInfo.name, tt.userInfo.position)
+			in, err := json.Marshal(tt.userInfo)
+			require.NoError(t, err)
 
-			req, _ := http.NewRequest(http.MethodPost, "/user", bytes.NewReader([]byte(input)))
-			//require.NoError(t, err)
+			req, err := http.NewRequest(http.MethodPost, "/user", bytes.NewReader([]byte(in)))
+			require.NoError(t, err)
 
 			rr := httptest.NewRecorder()
 			handler.ServeHTTP(rr, req)
 
-			//require.Equal(t, rr.Code, http.StatusOK)
+			require.Equal(t, rr.Code, http.StatusOK)
 
-			//body := rr.Body.String()
-			//
-			//var resp user.Response
-			//
-			//require.NoError(t, json.Unmarshal([]byte(body), &resp))
+			body := rr.Body.String()
+
+			var resp user.Response
+
+			require.NoError(t, json.Unmarshal([]byte(body), &resp))
 		})
 	}
 }

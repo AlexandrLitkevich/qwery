@@ -1,13 +1,22 @@
 #POST http://localhost:8082/url
 
 ### Send POST request with json body
-POST http://localhost:8082/user
+#POST http://localhost:8082/user
+#Content-Type: application/json
+#
+#{
+#  "Name": "eeeee",
+#  "Age": 44,
+#  "Position": "Develop"
+#}
+
+### Send POST request with json body
+POST http://localhost:8082/image
 Content-Type: application/json
 
 {
-  "Name": "eeeee",
-  "Age": 44,
-  "Position": "Develop"
+  "Name": "UnreadByte",
+  "Desc" : "UnreadByte complements ReadByte in implementing the io.ByteScanner interface."
 }
 
 ### Send POST request with json body failed

@@ -1,12 +1,14 @@
-package request
+package request_test
 
 import (
 	"bytes"
 	"fmt"
+	mwRSize "github.com/AlexandrLitkevich/qwery/internal/http-server/middleware/request"
 	resp "github.com/AlexandrLitkevich/qwery/internal/lib/api/response"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/stretchr/testify/require"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,11 +22,10 @@ type Request struct {
 
 func TestRequestSize(t *testing.T) {
 	SizeByteHandle := func(w http.ResponseWriter, r *http.Request) {
-		var req Request
+		//var req Request
 
-		err := render.DecodeJSON(r.Body, &req)
-		t.Log("this req str 25", req)
-		t.Log("this error", err)
+		body, err := io.ReadAll(r.Body)
+		t.Log("This size input in handler", unsafe.Sizeof(body))
 		if err != nil {
 			t.Log("this block error")
 			render.JSON(w, r, resp.Error("failed to decode request"))
@@ -55,7 +56,7 @@ func TestRequestSize(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			router := chi.NewRouter()
-			router.Use(RequestSize(1)) //This this function
+			router.Use(mwRSize.RequestSize(1)) //This this function
 			router.Post("/size", SizeByteHandle)
 			ts := httptest.NewServer(router)
 			defer ts.Close()

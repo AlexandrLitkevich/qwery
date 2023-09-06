@@ -47,6 +47,7 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 
 		var req Request
 		// парсим json в структуру Request
+
 		err := render.DecodeJSON(r.Body, &req)
 		if errors.Is(err, io.EOF) {
 			// Такую ошибку встретим, если получили запрос с пустым телом.

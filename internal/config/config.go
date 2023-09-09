@@ -1,17 +1,18 @@
 package config
 
 import (
-	"time"
 	"log"
 	"os"
+	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
-
 )
 
 type Config struct {
-	Env         string `yaml:"env" env-default:"local" env-required:"true"`
-	StoragePath string `yaml:"storage_path" env-required:"true"`
+	Endpoints   []string      `yaml:"endpoints" env-required:"true"`
+	Env         string        `yaml:"env" env-default:"local" env-required:"true"`
+	StoragePath string        `yaml:"storage_path" env-required:"true"`
+	DialTimeout time.Duration `yaml:"dial_timeout" env-default:"5s"`
 	HTTPServer  `yaml:"http_server"`
 }
 

@@ -2,40 +2,48 @@ package request_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/helpers"
 	mwRSize "github.com/AlexandrLitkevich/qwery/internal/http-server/middleware/request"
 	resp "github.com/AlexandrLitkevich/qwery/internal/lib/api/response"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 	"github.com/stretchr/testify/require"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"unsafe"
 )
 
-type Request struct {
-	Name string
-	Age  int
+func TestRequestSize(t *testing.T) {
+
+	res := mwRSize.RequestSize(12)
+
+	handler := http.HandlerFunc(helpers.SizeHandlerHelpers)
+
+	r := res(handler)
+
+	input := fmt.Sprint("lkdfgnjklhjfkldsahdfkl;haskljdfhljkasdhfk ")
+
+	t.Log("This size input", unsafe.Sizeof(input))
+
+	req, err := http.NewRequest(http.MethodPost, "/size", bytes.NewReader([]byte(input)))
+	require.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+
+	r.ServeHTTP(rr, req)
+
+	t.Log("This second req", req.Body)
+	var js resp.Response
+	body := rr.Body.String()
+	err = json.Unmarshal([]byte(body), &js)
+	require.NoError(t, err, "Fail json.Unmarshal([]byte(body), &js)")
+	t.Log("this rr", js.Error)
+
 }
 
-func TestRequestSize(t *testing.T) {
-	SizeByteHandle := func(w http.ResponseWriter, r *http.Request) {
-		//var req Request
-
-		body, err := io.ReadAll(r.Body)
-		t.Log("This size input in handler", unsafe.Sizeof(body))
-		if err != nil {
-			t.Log("this block error")
-			render.JSON(w, r, resp.Error("failed to decode request"))
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-		render.JSON(w, r, "byte success")
-	}
-
+func TestRequestSizeWithNewServer(t *testing.T) {
 	type args struct {
 		bytes int64
 	}
@@ -56,17 +64,16 @@ func TestRequestSize(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			router := chi.NewRouter()
-			router.Use(mwRSize.RequestSize(1)) //This this function
-			router.Post("/size", SizeByteHandle)
+			router.Use(mwRSize.RequestSize(tt.args.bytes))
+			router.Post("/size", helpers.SizeHandlerHelpers)
 			ts := httptest.NewServer(router)
 			defer ts.Close()
 
-			handler := http.HandlerFunc(SizeByteHandle)
+			handler := http.HandlerFunc(helpers.SizeHandlerHelpers)
 
 			input := fmt.Sprintf(`{"name": "%s", "desc": "%s"}`, tt.name, tt.desc)
 
-			size := unsafe.Sizeof(input)
-			t.Log("This size input", size)
+			t.Log("This size input", unsafe.Sizeof(input))
 
 			req, err := http.NewRequest(http.MethodPost, ts.URL+"/size", bytes.NewReader([]byte(input)))
 			require.NoError(t, err)
@@ -74,9 +81,9 @@ func TestRequestSize(t *testing.T) {
 			rr := httptest.NewRecorder()
 			handler.ServeHTTP(rr, req)
 
-			body := rr.Body.String()
+			//body := rr.Body.String()
 			t.Log("This code", rr.Code)
-			t.Log("This code", body)
+			//t.Log("This code", body)
 
 			//var resp2 struct{}
 			//

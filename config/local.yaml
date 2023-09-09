@@ -1,6 +1,8 @@
 env: "local" #local dev prod
-storage_path: "../../storage/storage.db" #path database
+storage_path: "../../storage/storage.db"
+endpoints: ["http://127.0.0.1:2379"]
+dial_timeout: 5s
 http_server:
   address: "localhost:8082"
   timeout: 4s #время на чтение запроса
-  idle_timejout: 60s #время жизни соендинения(переиспользуем соендинение с одним клиентом)
+  idle_timeout: 60s #время жизни соендинения(переиспользуем соендинение с одним клиентом)

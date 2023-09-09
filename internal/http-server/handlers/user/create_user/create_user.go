@@ -27,7 +27,7 @@ type CreateUserProvider interface {
 // New TODO: Added code 504 etc
 func New(log *slog.Logger, method CreateUserProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.createdUser.save.Create" //operation for message error
+		const op = "handlers.createdUser.Create" //operation for message error
 
 		log = log.With(
 			slog.String("op", op),

@@ -1,14 +1,6 @@
-#POST http://localhost:8082/url
-
-### Send POST request with json body
-#POST http://localhost:8082/user
-#Content-Type: application/json
-#
-#{
-#  "Name": "eeeee",
-#  "Age": 44,
-#  "Position": "Develop"
-#}
+### Send GET request with parameter
+GET http://localhost:8082/user_etcd/1
+Content-Type: application/json
 
 ### Send POST request with json body
 POST http://localhost:8082/image
@@ -20,10 +12,11 @@ Content-Type: application/json
 }
 
 ### Send POST request with json body failed
-#POST http://localhost:8082/url
-#Content-Type: application/json
-#
-#{
-#  "url": "https//:www.google.com",
-#  "alias": "gl3"
-#}
+POST http://localhost:8082/user_etcd
+Content-Type: application/json
+
+{
+  "Name": "Santjo",
+  "Age": 44,
+  "Position": "test"
+}

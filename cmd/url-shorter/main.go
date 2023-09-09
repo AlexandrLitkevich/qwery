@@ -6,7 +6,11 @@ import (
 	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/image"
 	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/url/save"
 	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/user/create_user"
+	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/users"
+	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/users/create"
 	"github.com/AlexandrLitkevich/qwery/internal/lib/logger/handlers/slogpretty"
+	"github.com/AlexandrLitkevich/qwery/internal/migration"
+	"github.com/AlexandrLitkevich/qwery/internal/storage/store"
 	"net/http"
 	"time"
 
@@ -18,7 +22,6 @@ import (
 
 	"github.com/AlexandrLitkevich/qwery/internal/config"
 	mwLogger "github.com/AlexandrLitkevich/qwery/internal/http-server/middleware/logger"
-	mwRSize "github.com/AlexandrLitkevich/qwery/internal/http-server/middleware/request"
 	"github.com/AlexandrLitkevich/qwery/internal/lib/logger/sl"
 	"github.com/AlexandrLitkevich/qwery/internal/storage/sqlite"
 	"github.com/joho/godotenv"
@@ -37,34 +40,70 @@ func main() {
 	if envErr != nil {
 		fmt.Println("error load env")
 	}
-
+	//Load config.yaml
 	cfg := config.MustLoad()
-
+	//implement logger
 	log := setupLogger(cfg.Env)
 
 	log.Info("starting application", slog.String("env", cfg.Env))
 	log.Info("Load env == true")
 
+	ctx := context.Background()
+
 	storage, err := sqlite.New(cfg.StoragePath)
+	if err != nil {
+		os.Exit(1)
+	}
+
+	etcdStore, err := store.New(ctx, log, cfg)
 	if err != nil {
 		log.Error("failed to init storage", sl.Err(err))
 		os.Exit(1)
 	}
-	_ = storage
+
+	log.Info("Started migratioin")
+
+	cmp, ops, err := migration.UpgradeTo0001()
+	if err != nil {
+		os.Exit(1)
+	}
+	if etcdStore.Cli != nil {
+		defer etcdStore.Cli.Close()
+	}
+
+	log.Info("finished  migration")
+	//На любой оперции он зависает
+	txn := etcdStore.Cli.Txn(ctx)
+	txn.If(cmp...)
+	txn.Then(ops...)
+	log.Info("migration precommt")
+
+	resp, err := txn.Commit()
+	log.Info("migration commt")
+
+	log.Info("resp", resp)
+	if err != nil {
+
+		log.Error("fail to commit: %w", err)
+	}
+	if !resp.Succeeded {
+		log.Error("fail to migrate schema: something changes in storage while migration")
+	}
+	log.Info("migration done")
+
+	log.Info("storages is created succesfly")
 
 	router := chi.NewRouter()
-	// ACTION:Logging request
-	// NOTE:Логгровать запросы это хороший тон
 	router.Use(middleware.RequestID)
 	router.Use(mwLogger.New(log))
-
 	router.Use(middleware.Recoverer) // Поднимаем приложение при панике
 	router.Use(middleware.URLFormat)
-	router.Use(mwRSize.RequestSize(1))
 
 	router.Post("/url", save.New(log, storage))
 	router.Post("/user", create_user.New(log, storage)) // Тут прям магия))))
 	router.Post("/image", image.New(log, storage))
+	router.Get("/user_etcd/{userId}", users.New(ctx, log, etcdStore))
+	router.Post("/user_etcd", create.New(ctx, log, etcdStore))
 
 	//TODO Get request home page
 

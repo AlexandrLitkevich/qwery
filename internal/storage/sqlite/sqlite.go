@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/AlexandrLitkevich/qwery/internal/config"
 	"github.com/AlexandrLitkevich/qwery/internal/http-server/handlers/user"
 	"github.com/AlexandrLitkevich/qwery/internal/storage"
 	"github.com/google/uuid"
@@ -15,6 +16,8 @@ import (
 
 type Storage struct {
 	db *sql.DB
+
+	cfg *config.Config
 }
 
 func New(storagePath string) (*Storage, error) {
@@ -71,10 +74,8 @@ func (s *Storage) SaveURL(urlToSave string, alias string) (int64, error) {
 		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
 			return 0, fmt.Errorf("%s: %w", op, storage.ErrURLExists)
 		}
-
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
-
 	id, err := res.LastInsertId()
 	if err != nil {
 		return 0, fmt.Errorf("%s: failed to get last insert id: %w", op, err)
@@ -110,8 +111,6 @@ func (s *Storage) GetURL(alias string) (string, error) {
 func (s *Storage) CreateUser(userInfo user.Request) (bool, error) {
 	const op = "storage.sqlite.CreateUserProvider"
 
-	//Generate ID
-	//TODO change type int on string
 	userId, err := uuid.NewUUID()
 	if err != nil {
 		return false, fmt.Errorf("%s: %w", op, err)

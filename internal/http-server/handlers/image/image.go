@@ -1,6 +1,7 @@
 package image
 
 import (
+	"encoding/json"
 	"errors"
 	resp "github.com/AlexandrLitkevich/qwery/internal/lib/api/response"
 	"github.com/AlexandrLitkevich/qwery/internal/lib/logger/sl"
@@ -36,8 +37,8 @@ func New(log *slog.Logger, method LoadProvider) http.HandlerFunc {
 
 		log.Debug("Start request", op)
 
-		//var req Request
-		_, err := io.ReadAll(r.Body)
+		var req Request
+		err := json.NewDecoder(r.Body).Decode(&req)
 		if errors.Is(err, io.EOF) {
 			log.Error("request body is empty")
 			render.JSON(w, r, resp.Error("empty request"))
